@@ -1,0 +1,18 @@
+application: presidenciables2013
+version: 1-1
+runtime: python
+api_version: 1
+
+handlers:
+
+- url: /css
+  static_dir: css
+
+- url: /img
+  static_dir: img
+
+- url: /js
+  static_dir: js
+
+- url: /.*
+  script: voto.py

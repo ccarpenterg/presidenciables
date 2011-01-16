@@ -1,0 +1,31 @@
+<div id="{{ id_a }}" class='left_img portrait' round="{{ round }}">
+	<img class='img_portrait'src="{{ img_a }}" width="240" height="310" border="1">
+	<div><span class='name'>{{ name_a }}</span></div>
+</div>
+<div id="{{ id_b  }}" class='right_img portrait' round="{{ round }}">
+	<img class='img_portrait' src="{{ img_b }}" width="240" height="310" border="1">
+	<div><span class='name'>{{ name_b }}</span></div>
+</div>
+<div id="footer">
+	<div class='left_img_min' vote="{{ tag_a }}">
+		<div class='elem_left'><img src="{{ img_res_a }}" width="120" height="155"></div>
+		<div class='wrapper_left'>
+                        <div id='mini_container_x' x="{{ result_a }}">
+                                <div class='blank_x'></div>
+                                <div class='color_x'></div>
+                        </div>
+                        <div class='mark'><span class='results'>{{ result_a  }}</span></div>
+                </div>
+
+	</div>
+	<div class='right_img_min' vote="{{ tag_b }}">
+		<div class='wrapper_right'>
+			<div id='mini_container_y' y="{{ result_b }}">
+				<div class='blank_y'></div>
+				<div class='color_y'></div>
+			</div>
+			<div class='mark'><div class='results'>{{ result_b  }}</div></div>
+		</div>
+		<div class='elem_right'><img src="{{ img_res_b }}" width="120" height="155"></div>
+	</div>
+</div>
