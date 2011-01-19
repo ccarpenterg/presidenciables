@@ -42,6 +42,7 @@ class User(db.Model):
     id = db.StringProperty()
     datecreated = db.DateTimeProperty(auto_now_add=True)
     ip = db.StringProperty()
+    unvoted = db.StringListProperty()
 
 def increment_counter(key):
     obj = db.get(key)
@@ -91,38 +92,32 @@ class RoundHandler(webapp.RequestHandler):
 	    user = User()
 	    user.id = m.hexdigest()
 	    user.ip = self.request.remote_addr
+
+	    query = db.Query(Rounds)
+	    num = query.count()
+	    rounds = query.fetch(num)
+	    unvoted = []
+	    for round in rounds:
+		unvoted.append(round.key().__str__())
+
+	    user.unvoted = unvoted
 	    user.put()
 	#################################
 	# identify user and query polls #
 	#################################
 	if 'pollid' in self.request.cookies: id = self.request.cookies['pollid']
-	query = Poll.all()
-	query.filter("usr_id =", id)
-	num = query.count()
-	rounds_voted = set()
-	voted = query.fetch(num)
-	for round in voted:
-	    rounds_voted.add(round.round.key())
-	query = db.Query(Rounds)
-	num = query.count()
-	rounds = query.fetch(num)
-	all_rounds = set()
-	for round in rounds:
-	    all_rounds.add(round.key())
-	not_voted = all_rounds - rounds_voted
-	not_voted = list(not_voted)
-	num = len(not_voted)
-	x = random.randint(0, num - 1)
-	key = not_voted[x]
-	round = db.get(key)
+	query = User.all()
+	query.filter("id =", id)
+	user = query.get()
+	unvoted = user.unvoted
+	if len(unvoted) == 0: self.redirect('/results')
+	round = random.sample(unvoted, 1)[0]
+	unvoted.remove(round)
+	round = db.get(round)
+	user.unvoted = unvoted
+	user.put()
 
-	'''
-	query = db.Query(Rounds)
-	num = query.count()
-	x = random.randint(0, num - 1)
-	round = query.fetch(num)[x]
-	key = round.key()
-	'''
+
 	template_values = {
 	    'id_a' : round.candidato_a.key(),
 	    'id_b' : round.candidato_b.key(),
@@ -131,7 +126,7 @@ class RoundHandler(webapp.RequestHandler):
 	    'name_a': round.candidato_a.name,
 	    'name_b': round.candidato_b.name,
 	    'results': "35%".encode('utf-8'),
-	    'round': key
+	    'round': round.key()
 	    }
 	path = os.path.join(os.path.dirname(__file__), 'templatev1.html')
         self.response.out.write(template.render(path, template_values))
@@ -164,6 +159,7 @@ class AjaxHandler(webapp.RequestHandler):
 	####################
 	# query left polls #
 	####################
+	'''
 	query = Poll.all()
         query.filter("usr_id =", usr_id)
         num = query.count()
@@ -183,6 +179,19 @@ class AjaxHandler(webapp.RequestHandler):
         x = random.randint(0, num - 1)
         key = not_voted[x]
         round = db.get(key)
+	'''
+	
+	query = User.all()
+        query.filter("id =", usr_id)
+        user = query.get()
+        unvoted = user.unvoted
+        if not unvoted: self.redirect('/results')
+        round = random.sample(unvoted, 1)[0]
+        unvoted.remove(round)
+        round = db.get(round)
+        user.unvoted = unvoted
+        user.put()
+
 
 	#################################
 	# score_a, score_b, score_total #
@@ -218,7 +227,7 @@ class AjaxHandler(webapp.RequestHandler):
 	    'result_b': score_b.__str__() + '%',
 	    'tag_a': tag_left,
 	    'tag_b': tag_right,
-	    'round': key
+	    'round': round.key()
             }
         path = os.path.join(os.path.dirname(__file__), 'ajax.html')
         self.response.out.write(template.render(path, template_values))
