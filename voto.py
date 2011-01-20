@@ -12,6 +12,8 @@ from google.appengine.ext import webapp
 from google.appengine.ext import db
 from google.appengine.ext.webapp.util import run_wsgi_app
 
+from google.appengine.api import memcache
+
 class Candidato(db.Model):
     name = db.StringProperty()
     group = db.StringProperty()
@@ -48,6 +50,20 @@ def increment_counter(key):
     obj = db.get(key)
     obj.scoring += 1
     obj.put()
+
+def get_rounds():
+    data = memcache.get('rounds')
+    if data is not None:
+	return data
+    else:
+	data = []
+	query = db.Query(Rounds)
+	num = query.count()
+	rounds = query.fetch(num)
+	for round in rounds:
+	    data.append(round.key().__str__())
+	memcache.add('rounds', data)
+	return data
 
 class MainPage(webapp.RequestHandler):
     def get(self):
@@ -93,13 +109,15 @@ class RoundHandler(webapp.RequestHandler):
 	    user.id = m.hexdigest()
 	    user.ip = self.request.remote_addr
 
+	    '''
 	    query = db.Query(Rounds)
 	    num = query.count()
 	    rounds = query.fetch(num)
 	    unvoted = []
 	    for round in rounds:
 		unvoted.append(round.key().__str__())
-
+	    '''
+	    unvoted = get_rounds()
 	    user.unvoted = unvoted
 	    user.put()
 	#################################
@@ -112,7 +130,6 @@ class RoundHandler(webapp.RequestHandler):
 	unvoted = user.unvoted
 	if len(unvoted) == 0: self.redirect('/results')
 	round = random.sample(unvoted, 1)[0]
-	unvoted.remove(round)
 	round = db.get(round)
 	user.unvoted = unvoted
 	user.put()

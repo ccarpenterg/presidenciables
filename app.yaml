@@ -1,5 +1,5 @@
 application: presidenciables2013
-version: 1-1
+version: 1-2
 runtime: python
 api_version: 1
 
@@ -16,3 +16,6 @@ handlers:
 
 - url: /.*
   script: voto.py
+
+builtins:
+- datastore_admin
