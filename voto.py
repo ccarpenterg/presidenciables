@@ -40,11 +40,12 @@ class PollScoring(db.Model):
     round     = db.ReferenceProperty(Rounds)
     scoring   = db.IntegerProperty()
 
-class User(db.Model):
+class Voter(db.Model):
     id = db.StringProperty()
-    datecreated = db.DateTimeProperty(auto_now_add=True)
+    #datecreated = db.DateTimeProperty(auto_now_add=True)
     ip = db.StringProperty()
-    unvoted = db.StringListProperty()
+    #unvoted = db.StringListProperty()
+    voted = db.ListProperty(long)
 
 def increment_counter(key):
     obj = db.get(key)
@@ -61,7 +62,7 @@ def get_rounds():
 	num = query.count()
 	rounds = query.fetch(num)
 	for round in rounds:
-	    data.append(round.key().__str__())
+	    data.append(round.key().id())
 	memcache.add('rounds', data)
 	return data
 
@@ -100,39 +101,38 @@ class RoundHandler(webapp.RequestHandler):
         m.update(self.request.remote_addr)
 	m.update(str(int(time.time()*10000000)))
 	id = m.hexdigest()
-	if 'pollid' not in self.request.cookies:
+	#if 'pollid' not in self.request.cookies.keys():
+	if self.request.cookies.get('pollid', None) == None:
             cookie = Cookie.SimpleCookie()
             cookie['pollid'] = id
             cookie['pollid']['max-age'] = 30000
             self.response.headers.add_header('Set-Cookie', cookie['pollid'].OutputString())
-	    user = User()
-	    user.id = m.hexdigest()
-	    user.ip = self.request.remote_addr
-
-	    '''
-	    query = db.Query(Rounds)
-	    num = query.count()
-	    rounds = query.fetch(num)
-	    unvoted = []
-	    for round in rounds:
-		unvoted.append(round.key().__str__())
-	    '''
+	    #self.response.headers.add_header('Set-Cookie', 'pollid=%s; Max-Age=30000' % id)
+	    newvoter = Voter()
+	    newvoter.id = id
+	    newvoter.ip = self.request.remote_addr
+	    newvoter.voted = []
+	    newvoter.put()
 	    unvoted = get_rounds()
-	    user.unvoted = unvoted
-	    user.put()
+	else:
+	    id = self.request.cookies.get('pollid')
+	    query = Voter.all()
+	    query.filter("id =", id)
+	    voter = query.get()
+	    voted = voter.voted
+	    all_rounds = get_rounds()
+	    unvoted = set(all_rounds) - set(voted)
+
 	#################################
 	# identify user and query polls #
 	#################################
-	if 'pollid' in self.request.cookies: id = self.request.cookies['pollid']
-	query = User.all()
-	query.filter("id =", id)
-	user = query.get()
-	unvoted = user.unvoted
-	if len(unvoted) == 0: self.redirect('/results')
-	round = random.sample(unvoted, 1)[0]
-	round = db.get(round)
-	user.unvoted = unvoted
-	user.put()
+	#query = Voter.all()
+	#query.filter("id =", id)
+	#voter = query.get()
+	#unvoted = voter.unvoted
+	#if len(unvoted) == 0: self.redirect('/results')
+	round = random.sample(list(unvoted), 1)[0]
+	round = Rounds.get_by_id(round)
 
 
 	template_values = {
@@ -198,15 +198,18 @@ class AjaxHandler(webapp.RequestHandler):
         round = db.get(key)
 	'''
 	
-	query = User.all()
+	query = Voter.all()
         query.filter("id =", usr_id)
         user = query.get()
-        unvoted = user.unvoted
-        if not unvoted: self.redirect('/results')
-        round = random.sample(unvoted, 1)[0]
-        unvoted.remove(round)
-        round = db.get(round)
-        user.unvoted = unvoted
+	all_rounds = set(get_rounds())
+	voted = user.voted
+	voted.append(lastround.key().id())
+	unvoted = all_rounds - set(voted)
+	#unvoted.remove(lastround.key().id())
+        #if not unvoted: self.redirect('/results')
+        round = random.sample(list(unvoted), 1)[0]
+        round = Rounds.get_by_id(round)
+        user.voted = voted
         user.put()
 
 
@@ -354,16 +357,31 @@ class ShowData(webapp.RequestHandler):
 	    temp += poll.vote.name + ' ' + str(poll.round.key())  + '</br>'
 	self.response.out.write(temp)
 
+class FlushHandler(webapp.RequestHandler):
+    def get(self):
+	memcache.flush_all()
+	self.response.out.write('OK')
+
+class MemcacheTest(webapp.RequestHandler):
+    def get(self):
+	rounds = memcache.get('rounds')
+	temp = ''
+	for round in rounds:
+	    temp += str(round) + '</br>'
+	self.response.out.write(temp)
+
 application = webapp.WSGIApplication(
 				     [('/', MainPage),
 				      ('/load', LoadHandler),
 				      ('/show', ShowHandler),
 				      ('/delete', DeleteHandler),
-				      ('/round', RoundHandler),
+				      ('/vote', RoundHandler),
 				      ('/ajax', AjaxHandler),
 				      ('/cookie', CookieHandler),
 				      ('/showdata', ShowData),
-				      ('/init', InitCounters)],
+				      ('/init', InitCounters),
+				      ('/flush', FlushHandler),
+				      ('/memcachetest', MemcacheTest)],
 				     debug=True)
 
 def main():
