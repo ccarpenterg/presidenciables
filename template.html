@@ -14,7 +14,7 @@
 					    'data': "id=" + this.id + "&round=" + round,
 					    'dataType': 'html',
 					    'type': 'POST',
-					    'success': function(data) {
+					    'success': function(data, textStatus, xhr) {
 					    	$(".container").empty()
 					    		       .append(data);
 					    	var x = $("#mini_container_x").attr('x')
@@ -23,7 +23,11 @@
 					    	$(".color_x").css('height', x);
 					    	$(".blank_y").css('height', x);
 					    	$(".color_y").css('height', y);
-					    	} 
+					    	},
+					    'error': function(xhr) {
+					    	if (xhr.status == 303 || xhr.status == 0) {
+					    	window.location.href = '/'; }
+					    	}
 					    });
 				});
 			$('.img_portrait').live('mouseover mouseout', function() {
@@ -56,6 +60,7 @@
 				<img class='img_portrait' src="{{ img_b }}" width="240" height="310" border="1">
 				<div><span class='name'>{{ name_b }}</span></div>
 			</div>
+			<div id="counter">{{ users }} usuarios han votado</div>
 			<div id="footer"></div>
 		</div>
 	</body>

@@ -1,5 +1,5 @@
 application: presidenciables2013
-version: 1-4
+version: 1-6
 runtime: python
 api_version: 1
 
@@ -10,6 +10,7 @@ handlers:
 
 - url: /css
   static_dir: css
+  expiration: 30m
 
 - url: /img
   static_dir: img

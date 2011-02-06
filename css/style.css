@@ -65,17 +65,7 @@ body {
 	font-size: 1.0em;
 	font-family: arial;
 }
-/*
-.elem_left {
-	float: left;
-	vertical-align: bottom;
-	position: relative;
-	bottom: 0px;
-	background-color: #45BF55;
-	height: 50%;
-	width: 70px;
-}
-*/
+
 .mark {
 	height: 25px;
 }
@@ -130,4 +120,31 @@ body {
 	float: left;
 	height: 155px;
 	padding-left: 8px;
+}
+
+#counter {
+	clear: both;
+	font-size: 1.5em;
+        font-family: verdana, Arial;
+}
+
+.title {
+	font-size: 2.5em;
+	font-family: Verdana, Arial;
+}
+
+.comingsoon {
+        width: 530px;
+        margin: 270px auto;
+        text-align: center;
+}
+
+#left_votes {
+	clear: both;
+	margin-left: -60px;
+}
+
+#right_votes {
+	clear: both;
+	margin-left: 10px;
 }

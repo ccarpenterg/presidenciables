@@ -1,9 +1,9 @@
-
+from datetime import datetime, timedelta
 from decimal import *
+from copy import deepcopy
 import csv
 import os
 import random
-#import md5
 import hashlib
 import Cookie
 import time
@@ -18,10 +18,6 @@ class Candidato(db.Model):
     name = db.StringProperty()
     group = db.StringProperty()
     img_id = db.StringProperty()
-
-
-class Round(db.Model):
-    candidatos = db.StringListProperty()
 
 
 class Rounds(db.Model):
@@ -42,9 +38,9 @@ class PollScoring(db.Model):
 
 class Voter(db.Model):
     id = db.StringProperty()
-    #datecreated = db.DateTimeProperty(auto_now_add=True)
+    datecreated = db.DateTimeProperty(auto_now_add=True)
     ip = db.StringProperty()
-    #unvoted = db.StringListProperty()
+    actived = db.BooleanProperty()
     voted = db.ListProperty(long)
 
 def increment_counter(key):
@@ -71,25 +67,6 @@ class MainPage(webapp.RequestHandler):
 	path = os.path.join(os.path.dirname(__file__), 'index.html')
 	self.response.out.write(template.render(path, None))
 
-class CookieHandler(webapp.RequestHandler):
-    def get(self):
-	m = hashlib.md5()
-	m.update(self.request.headers['User-Agent'])
-	m.update(self.request.remote_addr)
-	temp = ''
-	for key, value in self.request.headers.items():
-	    temp += key + ' - ' + value + '</br>'
-	temp += 'IP: ' + self.request.remote_addr + '</br>'
-	temp += m.hexdigest() + '</br>'
-	#if self.request.get('set-cookie', default_value=None) == None:
-	if 'pollid' not in self.request.cookies:
-	    cookie = Cookie.SimpleCookie()
-	    cookie['pollid'] = m.hexdigest()
-	    #cookie['pollid']['expires'] = 300
-	    cookie['pollid']['max-age'] = 300
-	    self.response.headers.add_header('Set-Cookie', cookie['pollid'].OutputString()) 
-	temp += self.request.cookies['pollid']
-	self.response.out.write(temp)
 
 class RoundHandler(webapp.RequestHandler):
     def get(self):
@@ -105,12 +82,16 @@ class RoundHandler(webapp.RequestHandler):
 	if self.request.cookies.get('pollid', None) == None:
             cookie = Cookie.SimpleCookie()
             cookie['pollid'] = id
-            cookie['pollid']['max-age'] = 30000
+            #cookie['pollid']['max-age'] = 30000
+	    expires = datetime.now() + timedelta(days=4)
+	    cookie['pollid']['expires'] = expires.strftime('%a, %d %b %Y %H:%M:%S')
+	    cookie['pollid']['path'] = '/'
             self.response.headers.add_header('Set-Cookie', cookie['pollid'].OutputString())
 	    #self.response.headers.add_header('Set-Cookie', 'pollid=%s; Max-Age=30000' % id)
 	    newvoter = Voter()
 	    newvoter.id = id
 	    newvoter.ip = self.request.remote_addr
+	    newvoter.actived = False
 	    newvoter.voted = []
 	    newvoter.put()
 	    unvoted = get_rounds()
@@ -126,14 +107,12 @@ class RoundHandler(webapp.RequestHandler):
 	#################################
 	# identify user and query polls #
 	#################################
-	#query = Voter.all()
-	#query.filter("id =", id)
-	#voter = query.get()
-	#unvoted = voter.unvoted
-	#if len(unvoted) == 0: self.redirect('/results')
 	round = random.sample(list(unvoted), 1)[0]
 	round = Rounds.get_by_id(round)
 
+	query = Voter.all()
+	query.filter("actived =", True)
+	num_users_actived = query.count()
 
 	template_values = {
 	    'id_a' : round.candidato_a.key(),
@@ -142,10 +121,10 @@ class RoundHandler(webapp.RequestHandler):
 	    'img_b': 'img/' + round.candidato_b.img_id + '.jpg',
 	    'name_a': round.candidato_a.name,
 	    'name_b': round.candidato_b.name,
-	    'results': "35%".encode('utf-8'),
+	    'users': num_users_actived.__str__(),
 	    'round': round.key()
 	    }
-	path = os.path.join(os.path.dirname(__file__), 'templatev1.html')
+	path = os.path.join(os.path.dirname(__file__), 'template.html')
         self.response.out.write(template.render(path, template_values))
 
 class AjaxHandler(webapp.RequestHandler):
@@ -176,82 +155,81 @@ class AjaxHandler(webapp.RequestHandler):
 	####################
 	# query left polls #
 	####################
-	'''
-	query = Poll.all()
-        query.filter("usr_id =", usr_id)
-        num = query.count()
-        rounds_voted = set()
-        voted = query.fetch(num)
-        for round in voted:
-            rounds_voted.add(round.round.key())
-        query = db.Query(Rounds)
-        num = query.count()
-        rounds = query.fetch(num)
-        all_rounds = set()
-        for round in rounds:
-            all_rounds.add(round.key())
-        not_voted = all_rounds - rounds_voted
-        not_voted = list(not_voted)
-        num = len(not_voted)
-        x = random.randint(0, num - 1)
-        key = not_voted[x]
-        round = db.get(key)
-	'''
-	
 	query = Voter.all()
         query.filter("id =", usr_id)
         user = query.get()
 	all_rounds = set(get_rounds())
-	voted = user.voted
+	voted = deepcopy(user.voted)
 	voted.append(lastround.key().id())
 	unvoted = all_rounds - set(voted)
-	#unvoted.remove(lastround.key().id())
-        #if not unvoted: self.redirect('/results')
-        round = random.sample(list(unvoted), 1)[0]
-        round = Rounds.get_by_id(round)
-        user.voted = voted
-        user.put()
+        if lastround.key().id() not in user.voted:
+	    if not user.actived: user.actived = True
+	    user.voted = voted
+	    user.put()
+	query = Voter.all()
+	query.filter("id =", usr_id)
+	voter = query.get()
+	if len(all_rounds) == len(voter.voted): 
+	    self.response.set_status(303)
+	else:
+            round = random.sample(list(unvoted), 1)[0]
+            round = Rounds.get_by_id(round)
 
 
 	#################################
 	# score_a, score_b, score_total #
 	#################################
-	query = db.Query(PollScoring)
-	query.filter("round =", lastround.key())
-	query.filter("candidato =", lastround.candidato_a.key())
-	score_a = query.get()
-	query = db.Query(PollScoring)
-	query.filter("round =", lastround.key())
-	query.filter("candidato =", lastround.candidato_b.key())
-	score_b = query.get()
-	score_total = score_a.scoring + score_b.scoring
-	getcontext().prec = 4
-	score_a = (Decimal(score_a.scoring) / Decimal(score_total)) * 100
-	score_b = (Decimal(score_b.scoring) / Decimal(score_total)) * 100
+	    query = db.Query(PollScoring)
+	    query.filter("round =", lastround.key())
+	    query.filter("candidato =", lastround.candidato_a.key())
+	    score_a = query.get()
+	    query = db.Query(PollScoring)
+	    query.filter("round =", lastround.key())
+	    query.filter("candidato =", lastround.candidato_b.key())
+	    score_b = query.get()
+	    score_total = score_a.scoring + score_b.scoring
+	    getcontext().prec = 4
+	    score_a_ratio = (Decimal(score_a.scoring) / Decimal(score_total)) * 100
+	    score_b_ratio = (Decimal(score_b.scoring) / Decimal(score_total)) * 100
 
-	tag_right = 'yes'
-	tag_left  = 'no'
-	if lastround.candidato_a.key() == result.key():
-	    tag_right = 'no'
-	    tag_left  = 'yes'
-        template_values = {
-            'id_a' : round.candidato_a.key(),
-            'id_b' : round.candidato_b.key(),
-            'img_a': 'img/' + round.candidato_a.img_id + '.jpg',
-            'img_b': 'img/' + round.candidato_b.img_id + '.jpg',
-	    'name_a': round.candidato_a.name,
-            'name_b': round.candidato_b.name,
-	    'img_res_a': 'img/' + lastround.candidato_a.img_id + '.jpg',
-	    'img_res_b': 'img/' + lastround.candidato_b.img_id + '.jpg',
-	    'result_a': score_a.__str__() + '%',
-	    'result_b': score_b.__str__() + '%',
-	    'tag_a': tag_left,
-	    'tag_b': tag_right,
-	    'round': round.key()
-            }
-        path = os.path.join(os.path.dirname(__file__), 'ajax.html')
-        self.response.out.write(template.render(path, template_values))
+	    tag_right = 'yes'
+	    tag_left  = 'no'
+	    if lastround.candidato_a.key() == result.key():
+	        tag_right = 'no'
+	        tag_left  = 'yes'
+            template_values = {
+                'id_a' : round.candidato_a.key(),
+                'id_b' : round.candidato_b.key(),
+                'img_a': 'img/' + round.candidato_a.img_id + '.jpg',
+                'img_b': 'img/' + round.candidato_b.img_id + '.jpg',
+	        'name_a': round.candidato_a.name,
+                'name_b': round.candidato_b.name,
+	        'img_res_a': 'img/' + lastround.candidato_a.img_id + '.jpg',
+	        'img_res_b': 'img/' + lastround.candidato_b.img_id + '.jpg',
+	        'result_a': score_a_ratio.__str__() + '%',
+	        'result_b': score_b_ratio.__str__() + '%',
+	        'tag_a': tag_left,
+	        'tag_b': tag_right,
+		'votes_a': score_a.scoring,
+		'votes_b': score_b.scoring,
+	        'round': round.key()
+                }
+            path = os.path.join(os.path.dirname(__file__), 'ajax.html')
+            self.response.out.write(template.render(path, template_values))
 
+class ResultsHandler(webapp.RequestHandler):
+    def get(self):
+	tmp = ''
+	results = []
+	query = Rounds.all()
+	num = query.count()
+	rounds = query.fetch(num)
+	for round in rounds:
+	    query = db.Query(PollScoring)
+	    query.filter('round =', round.key())
+	    for poll in query.fetch(2):
+		tmp += poll.candidato.name + poll.round.key().__str__() + poll.scoring.__str__() + '</br>'
+	self.response.out.write(tmp)
 
 class LoadHandler(webapp.RequestHandler):
     def get(self):
@@ -340,48 +318,20 @@ class InitCounters(webapp.RequestHandler):
 	self.response.out.write(temp)
 	    
 
-class DeleteHandler(webapp.RequestHandler):
-    def get(self):
-	candidatos = db.GqlQuery("SELECT * FROM Candidato")
-	for candidato in candidatos:
-	    candidato.delete()
-	self.response.out.write('OK')
-
-class ShowData(webapp.RequestHandler):
-    def get(self):
-	query = db.Query(Poll)
-	num = query.count()
-	query.order('usr_id')
-	temp = ''
-	for poll in query.fetch(num):
-	    temp += poll.vote.name + ' ' + str(poll.round.key())  + '</br>'
-	self.response.out.write(temp)
-
 class FlushHandler(webapp.RequestHandler):
     def get(self):
 	memcache.flush_all()
 	self.response.out.write('OK')
 
-class MemcacheTest(webapp.RequestHandler):
-    def get(self):
-	rounds = memcache.get('rounds')
-	temp = ''
-	for round in rounds:
-	    temp += str(round) + '</br>'
-	self.response.out.write(temp)
-
 application = webapp.WSGIApplication(
 				     [('/', MainPage),
 				      ('/load', LoadHandler),
 				      ('/show', ShowHandler),
-				      ('/delete', DeleteHandler),
 				      ('/vote', RoundHandler),
 				      ('/ajax', AjaxHandler),
-				      ('/cookie', CookieHandler),
-				      ('/showdata', ShowData),
 				      ('/init', InitCounters),
-				      ('/flush', FlushHandler),
-				      ('/memcachetest', MemcacheTest)],
+				      ('/resultados', ResultsHandler),
+				      ('/flush', FlushHandler)],
 				     debug=True)
 
 def main():
