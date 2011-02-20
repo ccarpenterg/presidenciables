@@ -15,7 +15,7 @@
 					    'dataType': 'html',
 					    'type': 'POST',
 					    'success': function(data, textStatus, xhr) {
-					    	$(".container").empty()
+					    	$(".ajax_cont").empty()
 					    		       .append(data);
 					    	var x = $("#mini_container_x").attr('x')
 					    	var y = $("#mini_container_y").attr('y')
@@ -52,6 +52,11 @@
 	
 	<body>
 		<div class='container'>
+			<div id='question'>
+				<p>Si estos fueran los candidatos, ¿quién cree Ud. que
+				ganaría en las próximas elecciones presidenciales de 2013?</p>
+			</div>
+			<div class='ajax_cont'>
 			<div id="{{ id_a }}" class='left_img portrait' round="{{ round  }}">
 				<img class='img_portrait' src="{{ img_a }}" width="240" height="310" border="1">
 				<div><span class='name'>{{ name_a }}</span></div>
@@ -62,6 +67,7 @@
 			</div>
 			<div id="counter">{{ users }} usuarios han votado</div>
 			<div id="footer"></div>
+			</div>
 		</div>
 	</body>
 </html>

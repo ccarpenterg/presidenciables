@@ -11,13 +11,17 @@ body {
 
 .container {
 	width: 530px;
-	margin: 7px auto;
+	margin: 10px auto;
 	text-align: center;
 }
 
-#question {
-	font-size: 1.4em;
+.result {
+	clear: both;
+	height: 38px;
+	padding-top: 35px;
 }
+
+
 .left_img {
 	width: 240x;
 	height: 350px;
@@ -47,10 +51,6 @@ body {
 	margin-left: 36px;
 }
 
-
-.name {
-	text-align: center;
-}
 
 .highlight {
 	border: -2px solid #45BF55;
@@ -122,23 +122,6 @@ body {
 	float: left;
 	height: 155px;
 	padding-left: 8px;
-}
-
-#counter {
-	clear: both;
-	font-size: 1.5em;
-        font-family: verdana, Arial;
-}
-
-.title {
-	font-size: 2.5em;
-	font-family: Verdana, Arial;
-}
-
-.comingsoon {
-        width: 530px;
-        margin: 270px auto;
-        text-align: center;
 }
 
 #left_votes {

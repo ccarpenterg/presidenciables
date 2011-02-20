@@ -1,5 +1,5 @@
 application: presidenciables2013
-version: 1-6
+version: 1-8
 runtime: python
 api_version: 1
 
@@ -10,13 +10,19 @@ handlers:
 
 - url: /css
   static_dir: css
-  expiration: 30m
+  expiration: 1m
 
 - url: /img
   static_dir: img
 
 - url: /js
   static_dir: js
+
+- url: /results
+  script: results.py
+
+- url: /worker/result
+  script: results.py
 
 - url: /.*
   script: voto.py

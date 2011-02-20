@@ -26,6 +26,10 @@ class Rounds(db.Model):
     candidato_b = db.ReferenceProperty(Candidato,
 	collection_name="rounds_reference_two_set")
 
+class PollOption(db.Model):
+    round = db.ReferenceProperty(Rounds)
+    candidate = db.ReferenceProperty(Candidato)
+
 class Poll(db.Model):
     round  = db.ReferenceProperty(Rounds)
     vote   = db.ReferenceProperty(Candidato)
@@ -219,17 +223,31 @@ class AjaxHandler(webapp.RequestHandler):
 
 class ResultsHandler(webapp.RequestHandler):
     def get(self):
-	tmp = ''
+	page = self.request.get('page', 1)
+	page = int(page)
 	results = []
-	query = Rounds.all()
-	num = query.count()
-	rounds = query.fetch(num)
+	rounds = db.Query(Rounds)
 	for round in rounds:
-	    query = db.Query(PollScoring)
-	    query.filter('round =', round.key())
-	    for poll in query.fetch(2):
-		tmp += poll.candidato.name + poll.round.key().__str__() + poll.scoring.__str__() + '</br>'
-	self.response.out.write(tmp)
+	    result = memcache.get(round.key().__str__())
+	    results.append(result)
+	path = os.path.join(os.path.dirname(__file__), 'results.html')
+	results = results[8*(page - 1): 8*page]
+	results = {'results': results}
+	self.response.out.write(template.render(path, results))
+	#self.response.out.write(page)
+
+class ResultsByCandidate(webapp.RequestHandler):
+    def get(self):
+	results = []
+	key = self.request.get('key')
+	candidate = db.get(key)
+	query = db.Query(PollOption)
+	query.filter('candidate =', candidate.key())
+	for row in query:
+	    result = memcache.get(row.round.key().__str__())
+	    results.append(result)
+	path = os.path.join(os.path.dirname(__file__), 'results.html')
+	self.response.out.write(template.render(path, {'results': results}))
 
 class LoadHandler(webapp.RequestHandler):
     def get(self):
@@ -250,27 +268,47 @@ class ShowHandler(webapp.RequestHandler):
 	pro  = db.GqlQuery("SELECT * FROM Candidato WHERE group = :group", group="Pro")
 	for c1 in right:
 	    for c2 in left:
-		#temp += c1.name + ' vs ' + c2.name + '</br>'
 		r = Rounds()
-		#r.candidatos = [c1.name, c2.name]
 		r.candidato_a = c1.key()
 		r.candidato_b = c2.key()
 		r.put()
+		option_a = PollOption()
+		option_a.round = r.key()
+		option_a.candidate = c1.key()
+		option_b = PollOption()
+		option_b.round = r.key()
+		option_b.candidate = c2.key()
+		option_a.put()
+		option_b.put()
 	for c1 in pro:
 	    for c2 in left:
-                #temp += c1.name + ' vs ' + c2.name + '</br>'
 		r = Rounds()
-                #r.candidatos = [c1.name, c2.name]
-		r.candidato_a = c1.key()
+                r.candidato_a = c1.key()
                 r.candidato_b = c2.key()
                 r.put()
+                option_a = PollOption()
+                option_a.round = r.key()
+                option_a.candidate = c1.key()
+                option_b = PollOption()
+                option_b.round = r.key()
+                option_b.candidate = c2.key()
+                option_a.put()
+                option_b.put()
+
 	    for c2 in right:
-                #temp += c1.name + ' vs ' + c2.name + '</br>'
 		r = Rounds()
-                #r.candidatos = [c1.name, c2.name]
-		r.candidato_a = c1.key()
+                r.candidato_a = c1.key()
                 r.candidato_b = c2.key()
                 r.put()
+                option_a = PollOption()
+                option_a.round = r.key()
+                option_a.candidate = c1.key()
+                option_b = PollOption()
+                option_b.round = r.key()
+                option_b.candidate = c2.key()
+                option_a.put()
+                option_b.put()
+
 	#vs1 = db.GqlQuery("SELECT * FROM Candidato")
 	#for c1 in vs1:
 	#    vs2 = db.GqlQuery("SELECT * FROM Candidato WHERE group != :group", group=c1.group)
@@ -331,6 +369,7 @@ application = webapp.WSGIApplication(
 				      ('/ajax', AjaxHandler),
 				      ('/init', InitCounters),
 				      ('/resultados', ResultsHandler),
+				      ('/resultados/candidatos', ResultsByCandidate),
 				      ('/flush', FlushHandler)],
 				     debug=True)
 
