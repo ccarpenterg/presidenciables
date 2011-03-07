@@ -1,0 +1,7 @@
+
+queue:
+- name: default
+  rate: 5/s
+
+- name: results
+  rate: 1/s

@@ -26,7 +26,7 @@
 					    	},
 					    'error': function(xhr) {
 					    	if (xhr.status == 303 || xhr.status == 0) {
-					    	window.location.href = '/'; }
+					    	window.location.href = '/candidatos'; }
 					    	}
 					    });
 				});
@@ -52,17 +52,23 @@
 	
 	<body>
 		<div class='container'>
+			<div id='header'>
+				<a href='/'><img id='logo' src='/img/logo.jpg' width="301" height="44"></a>
+				<div class='menu'>
+				<a href='/wiki'>¿Cómo funciona?</a>
+				</div>
+			</div>
 			<div id='question'>
 				<p>Si estos fueran los candidatos, ¿quién cree Ud. que
 				ganaría en las próximas elecciones presidenciales de 2013?</p>
 			</div>
 			<div class='ajax_cont'>
 			<div id="{{ id_a }}" class='left_img portrait' round="{{ round  }}">
-				<img class='img_portrait' src="{{ img_a }}" width="240" height="310" border="1">
+				<img class='img_portrait' src="{{ img_a }}" width="230" height="280" border="1">
 				<div><span class='name'>{{ name_a }}</span></div>
 			</div>
 			<div id="{{ id_b  }}" class='right_img portrait' round="{{ round }}">
-				<img class='img_portrait' src="{{ img_b }}" width="240" height="310" border="1">
+				<img class='img_portrait' src="{{ img_b }}" width="230" height="280" border="1">
 				<div><span class='name'>{{ name_b }}</span></div>
 			</div>
 			<div id="counter">{{ users }} usuarios han votado</div>

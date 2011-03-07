@@ -1,0 +1,32 @@
+body {
+	background: #FFFFFF;
+	color: #000000;
+	font-family: verdana, Arial;
+	font-size: 12pt;
+	font-weight: bold;
+	height: 100%;
+	margin: 0;
+	line-height: 7,5px;
+}
+
+.container {
+	width: 850px;
+	margin: 10px auto;
+	text-align: center;
+}
+
+.newline {
+	clear: left;
+}
+
+.picture {
+	display: inline;
+	float: left;
+	margin-left: 10px;
+	margin-right: 10px;
+}
+
+li {
+	list-style: none;
+	margin-bottom: 10px;
+}
