@@ -144,7 +144,8 @@ class RoundHandler(webapp.RequestHandler):
 	        'name_a': round.candidato_a.name,
 	        'name_b': round.candidato_b.name,
 	        'users': num_users_actived.__str__(),
-	        'round': round.key()
+	        'round': round.key(),
+		'time': int(time.time())
 	        }
 	    path = os.path.join(os.path.dirname(__file__), 'template.html')
             self.response.out.write(template.render(path, template_values))

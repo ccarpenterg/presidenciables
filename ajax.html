@@ -7,8 +7,8 @@
 	<div><span class='name'>{{ name_b }}</span></div>
 </div>
 <div id="footer">
-	<div class='left_img_min' vote="{{ tag_a }}">
-		<div class='elem_left'><img src="{{ img_res_a }}" width="120" height="155"></div>
+	<div class='left_img_min'>
+		<div class='elem_left' vote="{{ tag_a }}"><img vote="{{ tag_a }}" src="{{ img_res_a }}" width="120" height="155"></div>
 		<div class='wrapper_left'>
                         <div id='mini_container_x' x="{{ result_a }}">
                                 <div class='blank_x'></div>
@@ -19,7 +19,7 @@
 		<div id='left_votes'>{{ votes_a }} votos</div>
 
 	</div>
-	<div class='right_img_min' vote="{{ tag_b }}">
+	<div class='right_img_min'>
 		<div class='wrapper_right'>
 			<div id='mini_container_y' y="{{ result_b }}">
 				<div class='blank_y'></div>
@@ -27,7 +27,7 @@
 			</div>
 			<div class='mark'><div class='results'>{{ result_b  }}</div></div>
 		</div>
-		<div class='elem_right'><img src="{{ img_res_b }}" width="120" height="155"></div>
+		<div class='elem_right' vote="{{ tag_b }}"><img vote="{{ tag_b }}" src="{{ img_res_b }}" width="120" height="155"></div>
 		<div id='right_votes'>{{ votes_b }} votos</div>
 	</div>
 </div>

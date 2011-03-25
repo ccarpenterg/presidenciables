@@ -1,5 +1,5 @@
 application: presidenciables2013
-version: 2-0
+version: 2-3
 runtime: python
 api_version: 1
 
@@ -10,7 +10,7 @@ handlers:
 
 - url: /css
   static_dir: css
-  expiration: 1m
+  expiration: 5m
 
 - url: /img
   static_dir: img
@@ -25,6 +25,10 @@ handlers:
 - url: /favicon.ico
   static_files: icon/favicon.ico
   upload: icon/favicon.ico
+
+- url: /robots.txt
+  static_files: robots/robots.txt
+  upload: robots/robots.txt
 
 - url: /worker/result
   script: results.py

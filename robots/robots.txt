@@ -1,0 +1,5 @@
+
+User-agent: *
+Disallow: /resultados/candidatos
+Disallow: /ajax
+Disallow: /candidatos

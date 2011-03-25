@@ -1,7 +1,7 @@
 body {
 	background: #FFFFFF;
 	color: #000000;
-	font-family: verdana, Arial;
+	font-family: tahoma, verdana, Arial;
 	font-size: 12pt;
 	font-weight: bold;
 	height: 100%;
@@ -23,6 +23,29 @@ body {
 	font-size: 1.3em;
 	clear: both;
 }
+
+#social {
+	clear: both;
+	padding-top: 8px;
+}
+
+#tweet {
+	float: right;
+}
+
+#facebook {
+	float: right;
+}
+
+#call {
+	float: left;
+	height: 24px;
+	font-size: 14px;
+	padding-left: 10px;
+	line-height: 1,2px;
+	color: #3B5998;
+}
+
 .left_img {
 	width: 230px;
 	height: 300px;
@@ -158,8 +181,9 @@ body {
 }
 
 p {
-	padding-top: 14px;
+	padding-top: 2px;
 	margin-top: 0px;
+	margin-bottom: 15px;
 }
 
 .menu {
@@ -167,4 +191,26 @@ p {
 	padding-left: 25px;
 	font-size: 1em;
 	float: left;
+	color: #0000CC;
+}
+
+.text {
+	color: #0000CC;
+	text-decoration: underline;
+}
+
+a:visited {
+	color: #FFFFFF;
+}
+
+a:link {
+	color: #FFFFFF;
+}
+
+a:active {
+	color: #FFFFFF;
+}
+
+a:hover {
+	color: #FFFFFF;
 }
